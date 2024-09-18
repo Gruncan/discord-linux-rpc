@@ -2,7 +2,7 @@ include_directories(../include)
 add_executable(
     send-presence
     MACOSX_BUNDLE
-        send-presence.c
+        main.c
 )
 set_target_properties(send-presence PROPERTIES
     MACOSX_BUNDLE_BUNDLE_NAME "Send Presence"

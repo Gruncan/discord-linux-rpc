@@ -8,13 +8,26 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <signal.h>
+#include <unistd.h>
 
 #include "discord_rpc.h"
 
 static const char* APPLICATION_ID = "1286034210838155325";
-static int FrustrationLevel = 99;
 static int64_t StartTime;
 static int SendPresence = 1;
+
+
+void signalHandler(int signal) {
+    if (signal == SIGINT || signal == SIGTERM) {
+        printf("Closing connections...\n");
+        Discord_Shutdown();
+        exit(0);
+    }
+}
 
 static int prompt(char* line, size_t size)
 {
@@ -37,14 +50,14 @@ static void updateDiscordPresence()
         char buffer[256];
         DiscordRichPresence discordPresence;
         memset(&discordPresence, 0, sizeof(discordPresence));
-        sprintf(buffer, "Jamezeboyy L count: %d", FrustrationLevel);
+        sprintf(buffer, "Jamezeboyy L count: 99");
         discordPresence.details = buffer;
         discordPresence.startTimestamp = StartTime;
         discordPresence.endTimestamp = time(0) + 5 * 60;
         discordPresence.smallImageKey = "mcmichaellarge";
         discordPresence.partyId = "party1234";
-        discordPresence.partySize = 1;
-        discordPresence.partyMax = 1;
+        discordPresence.partySize = INT_MAX;
+        discordPresence.partyMax = INT_MAX;
         discordPresence.partyPrivacy = DISCORD_PARTY_PUBLIC;
         discordPresence.matchSecret = "xyzzy";
         discordPresence.joinSecret = "join";
@@ -131,73 +144,22 @@ static void discordInit()
     Discord_Initialize(APPLICATION_ID, &handlers, 1, NULL);
 }
 
-static void gameLoop()
+
+int main(void)
 {
-    char line[512];
-    char* space;
+    signal(SIGINT, signalHandler);
+    signal(SIGTERM, signalHandler);
 
-    StartTime = time(0);
-
-    printf("You are standing in an open field west of a white house.\n");
-    while (prompt(line, sizeof(line))) {
-        if (line[0]) {
-            if (line[0] == 'q') {
-                break;
-            }
-
-            if (line[0] == 't') {
-                printf("Shutting off Discord.\n");
-                Discord_Shutdown();
-                continue;
-            }
-
-            if (line[0] == 'c') {
-                if (SendPresence) {
-                    printf("Clearing presence information.\n");
-                    SendPresence = 0;
-                }
-                else {
-                    printf("Restoring presence information.\n");
-                    SendPresence = 1;
-                }
-                updateDiscordPresence();
-                continue;
-            }
-
-            if (line[0] == 'y') {
-                printf("Reinit Discord.\n");
-                discordInit();
-                continue;
-            }
-
-            if (time(NULL) & 1) {
-                printf("I don't understand that.\n");
-            }
-            else {
-                space = strchr(line, ' ');
-                if (space) {
-                    *space = 0;
-                }
-                printf("I don't know the word \"%s\".\n", line);
-            }
-
-            ++FrustrationLevel;
-
-            updateDiscordPresence();
-        }
-
-#ifdef DISCORD_DISABLE_IO_THREAD
-        Discord_UpdateConnection();
-#endif
-        Discord_RunCallbacks();
-    }
-}
-
-int main(int argc, char* argv[])
-{
+    printf("Initializing discord RPC...\n");
     discordInit();
 
-    gameLoop();
+    updateDiscordPresence();
+    printf("Presence updated.\n");
+
+    while(1)
+    {
+
+    }
 
     Discord_Shutdown();
     return 0;
