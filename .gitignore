@@ -1,5 +1,5 @@
 /build*/
 /.vscode/
-/thirdparty/
+/dependencies/
 .vs/
 .DS_Store
