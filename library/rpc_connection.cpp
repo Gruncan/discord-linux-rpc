@@ -3,17 +3,17 @@
 
 #include <atomic>
 
-static const int RpcVersion = 1;
+static constexpr int RpcVersion = 1;
 static RpcConnection Instance;
 
-/*static*/ RpcConnection* RpcConnection::Create(const char* applicationId)
+RpcConnection* RpcConnection::Create(const char* applicationId)
 {
     Instance.connection = BaseConnection::Create();
     StringCopy(Instance.appId, applicationId);
     return &Instance;
 }
 
-/*static*/ void RpcConnection::Destroy(RpcConnection*& c)
+void RpcConnection::Destroy(RpcConnection*& c)
 {
     c->Close();
     BaseConnection::Destroy(c->connection);
@@ -45,8 +45,8 @@ void RpcConnection::Open()
     }
     else {
         sendFrame.opcode = Opcode::Handshake;
-        sendFrame.length = (uint32_t)JsonWriteHandshakeObj(
-          sendFrame.message, sizeof(sendFrame.message), RpcVersion, appId);
+        sendFrame.length = static_cast<uint32_t>(JsonWriteHandshakeObj(
+          sendFrame.message, sizeof(sendFrame.message), RpcVersion, appId));
 
         if (connection->Write(&sendFrame, sizeof(MessageFrameHeader) + sendFrame.length)) {
             state = State::SentHandshake;
@@ -70,7 +70,7 @@ bool RpcConnection::Write(const void* data, size_t length)
 {
     sendFrame.opcode = Opcode::Frame;
     memcpy(sendFrame.message, data, length);
-    sendFrame.length = (uint32_t)length;
+    sendFrame.length = static_cast<uint32_t>(length);
     if (!connection->Write(&sendFrame, sizeof(MessageFrameHeader) + length)) {
         Close();
         return false;
@@ -83,12 +83,12 @@ bool RpcConnection::Read(JsonDocument& message)
     if (state != State::Connected && state != State::SentHandshake) {
         return false;
     }
-    MessageFrame readFrame;
+    MessageFrame readFrame{};
     for (;;) {
         bool didRead = connection->Read(&readFrame, sizeof(MessageFrameHeader));
         if (!didRead) {
             if (!connection->isOpen) {
-                lastErrorCode = (int)ErrorCode::PipeClosed;
+                lastErrorCode = static_cast<int>(ErrorCode::PipeClosed);
                 StringCopy(lastErrorMessage, "Pipe closed");
                 Close();
             }
@@ -98,7 +98,7 @@ bool RpcConnection::Read(JsonDocument& message)
         if (readFrame.length > 0) {
             didRead = connection->Read(readFrame.message, readFrame.length);
             if (!didRead) {
-                lastErrorCode = (int)ErrorCode::ReadCorrupt;
+                lastErrorCode = static_cast<int>(ErrorCode::ReadCorrupt);
                 StringCopy(lastErrorMessage, "Partial data in frame");
                 Close();
                 return false;
@@ -128,7 +128,7 @@ bool RpcConnection::Read(JsonDocument& message)
         case Opcode::Handshake:
         default:
             // something bad happened
-            lastErrorCode = (int)ErrorCode::ReadCorrupt;
+            lastErrorCode = static_cast<int>(ErrorCode::ReadCorrupt);
             StringCopy(lastErrorMessage, "Bad ipc frame");
             Close();
             return false;

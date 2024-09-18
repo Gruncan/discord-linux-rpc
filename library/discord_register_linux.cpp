@@ -1,24 +1,22 @@
 #include "discord_rpc.h"
 #include "discord_register.h"
-#include <stdio.h>
+#include <cstdio>
 
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cerrno>
+#include <cstdlib>
+#include <cstring>
 #include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 static bool Mkdir(const char* path)
 {
-    int result = mkdir(path, 0755);
-    if (result == 0) {
+    const int result = mkdir(path, 0755);
+    if (result == 0)
+    {
         return true;
     }
-    if (errno == EEXIST) {
-        return true;
-    }
-    return false;
+
+    return errno == EEXIST;
 }
 
 // we want to register games so we can run them from Discord client as discord-<appid>://
@@ -27,14 +25,17 @@ extern "C" DISCORD_EXPORT void Discord_Register(const char* applicationId, const
     // Add a desktop file and update some mime handlers so that xdg-open does the right thing.
 
     const char* home = getenv("HOME");
-    if (!home) {
+    if (!home)
+    {
         return;
     }
 
-    char exePath[1024];
-    if (!command || !command[0]) {
+    if (!command || !command[0])
+    {
+        char exePath[1024];
         ssize_t size = readlink("/proc/self/exe", exePath, sizeof(exePath));
-        if (size <= 0 || size >= (ssize_t)sizeof(exePath)) {
+        if (size <= 0 || size >= static_cast<ssize_t>(sizeof(exePath)))
+        {
             return;
         }
         exePath[size] = '\0';
@@ -49,9 +50,11 @@ extern "C" DISCORD_EXPORT void Discord_Register(const char* applicationId, const
                                    "Categories=Discord;Games;\n"
                                    "MimeType=x-scheme-handler/discord-%s;\n";
     char desktopFile[2048];
-    int fileLen = snprintf(
+    const int fileLen = snprintf(
       desktopFile, sizeof(desktopFile), desktopFileFormat, applicationId, command, applicationId);
-    if (fileLen <= 0) {
+
+    if (fileLen <= 0)
+    {
         return;
     }
 
@@ -60,25 +63,28 @@ extern "C" DISCORD_EXPORT void Discord_Register(const char* applicationId, const
 
     char desktopFilePath[1024];
     snprintf(desktopFilePath, sizeof(desktopFilePath), "%s/.local", home);
-    if (!Mkdir(desktopFilePath)) {
+
+    if (!Mkdir(desktopFilePath))
         return;
-    }
+
     strcat(desktopFilePath, "/share");
-    if (!Mkdir(desktopFilePath)) {
+    if (!Mkdir(desktopFilePath))
         return;
-    }
+
     strcat(desktopFilePath, "/applications");
-    if (!Mkdir(desktopFilePath)) {
+    if (!Mkdir(desktopFilePath))
         return;
-    }
+
     strcat(desktopFilePath, desktopFilename);
 
     FILE* fp = fopen(desktopFilePath, "w");
-    if (fp) {
+    if (fp)
+    {
         fwrite(desktopFile, 1, fileLen, fp);
         fclose(fp);
     }
-    else {
+    else
+    {
         return;
     }
 
@@ -88,7 +94,8 @@ extern "C" DISCORD_EXPORT void Discord_Register(const char* applicationId, const
              "xdg-mime default discord-%s.desktop x-scheme-handler/discord-%s",
              applicationId,
              applicationId);
-    if (system(xdgMimeCommand) < 0) {
+    if (system(xdgMimeCommand) < 0)
+    {
         fprintf(stderr, "Failed to register mime handler\n");
     }
 }

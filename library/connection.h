@@ -2,10 +2,9 @@
 
 // This is to wrap the platform specific kinds of connect/read/write.
 
-#include <stdint.h>
-#include <stdlib.h>
+#include <cstddef>
 
-// not really connectiony, but need per-platform
+// not really connection, but need per-platform
 int GetProcessId();
 
 struct BaseConnection {

@@ -65,7 +65,7 @@ typedef struct DiscordEventHandlers {
 #define DISCORD_PARTY_PUBLIC 1
 
 DISCORD_EXPORT void Discord_Initialize(const char* applicationId,
-                                       DiscordEventHandlers* handlers,
+                                       const DiscordEventHandlers* handlers,
                                        int autoRegister,
                                        const char* optionalSteamId);
 DISCORD_EXPORT void Discord_Shutdown(void);
@@ -83,7 +83,7 @@ DISCORD_EXPORT void Discord_ClearPresence(void);
 
 DISCORD_EXPORT void Discord_Respond(const char* userid, /* DISCORD_REPLY_ */ int reply);
 
-DISCORD_EXPORT void Discord_UpdateHandlers(DiscordEventHandlers* handlers);
+DISCORD_EXPORT void Discord_UpdateHandlers(const DiscordEventHandlers* handlers);
 
 #ifdef __cplusplus
 } /* extern "C" */

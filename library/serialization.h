@@ -58,8 +58,7 @@ class LinearAllocator {
 public:
     char* buffer_;
     char* end_;
-    LinearAllocator()
-    {
+    LinearAllocator():buffer_(nullptr), end_(nullptr) {
         assert(0); // needed for some default case in rapidjson, should not use
     }
     LinearAllocator(char* buffer, size_t size)
@@ -67,7 +66,7 @@ public:
       , end_(buffer + size)
     {
     }
-    static const bool kNeedFree = false;
+    static constexpr bool kNeedFree = false;
     void* Malloc(size_t size)
     {
         char* res = buffer_;
@@ -78,7 +77,7 @@ public:
         }
         return res;
     }
-    void* Realloc(void* originalPtr, size_t originalSize, size_t newSize)
+    void* Realloc(const void* originalPtr, size_t originalSize, size_t newSize)
     {
         if (newSize == 0) {
             return nullptr;
@@ -90,7 +89,7 @@ public:
         (void)(originalSize);
         return Malloc(newSize);
     }
-    static void Free(void* ptr)
+    static void Free(const void* ptr)
     {
         /* shrug */
         (void)ptr;
@@ -102,10 +101,10 @@ class FixedLinearAllocator : public LinearAllocator {
 public:
     char fixedBuffer_[Size];
     FixedLinearAllocator()
-      : LinearAllocator(fixedBuffer_, Size)
+      : LinearAllocator(fixedBuffer_, Size),fixedBuffer_{}
     {
     }
-    static const bool kNeedFree = false;
+    static constexpr bool kNeedFree = false;
 };
 
 // wonder why this isn't a thing already, maybe I missed it
@@ -129,8 +128,8 @@ public:
             *current_++ = c;
         }
     }
-    void Flush() {}
-    size_t GetSize() const { return (size_t)(current_ - buffer_); }
+    static void Flush() {}
+    size_t GetSize() const { return static_cast<size_t>(current_ - buffer_); }
 };
 
 using MallocAllocator = rapidjson::CrtAllocator;
@@ -159,7 +158,7 @@ public:
 using JsonDocumentBase = rapidjson::GenericDocument<UTF8, PoolAllocator, StackAllocator>;
 class JsonDocument : public JsonDocumentBase {
 public:
-    static const int kDefaultChunkCapacity = 32 * 1024;
+    static constexpr int kDefaultChunkCapacity = 32 * 1024;
     // json parser will use this buffer first, then allocate more if needed; I seriously doubt we
     // send any messages that would use all of this, though.
     char parseBuffer_[32 * 1024];
@@ -171,7 +170,7 @@ public:
                          &poolAllocator_,
                          sizeof(stackAllocator_.fixedBuffer_),
                          &stackAllocator_)
-      , poolAllocator_(parseBuffer_, sizeof(parseBuffer_), kDefaultChunkCapacity, &mallocAllocator_)
+      ,parseBuffer_{}, poolAllocator_(parseBuffer_, sizeof(parseBuffer_), kDefaultChunkCapacity, &mallocAllocator_)
       , stackAllocator_()
     {
     }

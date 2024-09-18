@@ -1,5 +1,4 @@
 #include "serialization.h"
-#include "connection.h"
 #include "discord_rpc.h"
 
 template <typename T>
@@ -19,7 +18,7 @@ void NumberToString(char* dest, T number)
     while (number) {
         auto digit = number % 10;
         number = number / 10;
-        temp[place++] = '0' + (char)digit;
+        temp[place++] = '0' + static_cast<char>(digit);
     }
     for (--place; place >= 0; --place) {
         *dest++ = temp[place];
@@ -36,7 +35,7 @@ void WriteKey(JsonWriter& w, T& k)
 
 struct WriteObject {
     JsonWriter& writer;
-    WriteObject(JsonWriter& w)
+    explicit WriteObject(JsonWriter& w)
       : writer(w)
     {
         writer.StartObject();

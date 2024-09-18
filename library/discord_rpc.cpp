@@ -10,10 +10,8 @@
 #include <chrono>
 #include <mutex>
 
-#ifndef DISCORD_DISABLE_IO_THREAD
 #include <condition_variable>
 #include <thread>
-#endif
 
 constexpr size_t MaxMessageSize{16 * 1024};
 constexpr size_t MessageQueueSize{8};
@@ -75,8 +73,9 @@ static auto NextConnect = std::chrono::system_clock::now();
 static int Pid{0};
 static int Nonce{1};
 
-#ifndef DISCORD_DISABLE_IO_THREAD
-static void Discord_UpdateConnection(void);
+
+static void Discord_UpdateConnection();
+
 class IoThreadHolder {
 private:
     std::atomic_bool keepRunning{true};
@@ -112,14 +111,7 @@ public:
 
     ~IoThreadHolder() { Stop(); }
 };
-#else
-class IoThreadHolder {
-public:
-    void Start() {}
-    void Stop() {}
-    void Notify() {}
-};
-#endif // DISCORD_DISABLE_IO_THREAD
+
 static IoThreadHolder* IoThread{nullptr};
 
 static void UpdateReconnectTime()
@@ -128,11 +120,7 @@ static void UpdateReconnectTime()
       std::chrono::duration<int64_t, std::milli>{ReconnectTimeMs.nextDelay()};
 }
 
-#ifdef DISCORD_DISABLE_IO_THREAD
-extern "C" DISCORD_EXPORT void Discord_UpdateConnection(void)
-#else
-static void Discord_UpdateConnection(void)
-#endif
+static void Discord_UpdateConnection()
 {
     if (!Connection) {
         return;
@@ -176,14 +164,14 @@ static void Discord_UpdateConnection(void)
                 auto data = GetObjMember(&message, "data");
 
                 if (strcmp(evtName, "ACTIVITY_JOIN") == 0) {
-                    auto secret = GetStrMember(data, "secret");
+                    const auto secret = GetStrMember(data, "secret");
                     if (secret) {
                         StringCopy(JoinGameSecret, secret);
                         WasJoinGame.store(true);
                     }
                 }
                 else if (strcmp(evtName, "ACTIVITY_SPECTATE") == 0) {
-                    auto secret = GetStrMember(data, "secret");
+                    const auto secret = GetStrMember(data, "secret");
                     if (secret) {
                         StringCopy(SpectateGameSecret, secret);
                         WasSpectateGame.store(true);
@@ -216,7 +204,7 @@ static void Discord_UpdateConnection(void)
 
         // writes
         if (UpdatePresence.exchange(false) && QueuedPresence.length) {
-            QueuedMessage local;
+            QueuedMessage local{};
             {
                 std::lock_guard<std::mutex> guard(PresenceMutex);
                 local.Copy(QueuedPresence);
@@ -271,7 +259,7 @@ static bool DeregisterForEvent(const char* evtName)
 }
 
 extern "C" DISCORD_EXPORT void Discord_Initialize(const char* applicationId,
-                                                  DiscordEventHandlers* handlers,
+                                                  const DiscordEventHandlers* handlers,
                                                   int autoRegister,
                                                   const char* optionalSteamId)
 {
@@ -476,7 +464,7 @@ extern "C" DISCORD_EXPORT void Discord_RunCallbacks(void)
     }
 }
 
-extern "C" DISCORD_EXPORT void Discord_UpdateHandlers(DiscordEventHandlers* newHandlers)
+extern "C" DISCORD_EXPORT void Discord_UpdateHandlers(const DiscordEventHandlers* newHandlers)
 {
     if (newHandlers) {
 #define HANDLE_EVENT_REGISTRATION(handler_name, event)              \
@@ -500,5 +488,4 @@ extern "C" DISCORD_EXPORT void Discord_UpdateHandlers(DiscordEventHandlers* newH
         std::lock_guard<std::mutex> guard(HandlerMutex);
         Handlers = {};
     }
-    return;
 }
