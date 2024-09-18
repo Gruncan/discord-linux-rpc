@@ -3,11 +3,10 @@ project (DiscordRPC)
 
 include(GNUInstallDirs)
 
-option(BUILD_EXAMPLES "Build example apps" ON)
 
 # format
 file(GLOB_RECURSE ALL_SOURCE_FILES
-    examples/*.cpp examples/*.h examples/*.c
+    source/*.cpp source/*.h source/*.c
     include/*.h
         library/*.cpp library/*.h library/*.c
 )
@@ -51,6 +50,4 @@ add_library(rapidjson STATIC IMPORTED ${RAPIDJSON})
 # add subdirs
 
 add_subdirectory(library)
-if (BUILD_EXAMPLES)
-    add_subdirectory(source)
-endif(BUILD_EXAMPLES)
+add_subdirectory(source)
