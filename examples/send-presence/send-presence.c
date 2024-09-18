@@ -11,8 +11,8 @@
 
 #include "discord_rpc.h"
 
-static const char* APPLICATION_ID = "345229890980937739";
-static int FrustrationLevel = 0;
+static const char* APPLICATION_ID = "1286034210838155325";
+static int FrustrationLevel = 99;
 static int64_t StartTime;
 static int SendPresence = 1;
 
@@ -22,7 +22,7 @@ static int prompt(char* line, size_t size)
     char* nl;
     printf("\n> ");
     fflush(stdout);
-    res = fgets(line, (int)size, stdin) ? 1 : 0;
+    res = fgets(line, size, stdin) ? 1 : 0;
     line[size - 1] = 0;
     nl = strchr(line, '\n');
     if (nl) {
@@ -37,16 +37,14 @@ static void updateDiscordPresence()
         char buffer[256];
         DiscordRichPresence discordPresence;
         memset(&discordPresence, 0, sizeof(discordPresence));
-        discordPresence.state = "West of House";
-        sprintf(buffer, "Frustration level: %d", FrustrationLevel);
+        sprintf(buffer, "Jamezeboyy L count: %d", FrustrationLevel);
         discordPresence.details = buffer;
         discordPresence.startTimestamp = StartTime;
         discordPresence.endTimestamp = time(0) + 5 * 60;
-        discordPresence.largeImageKey = "canary-large";
-        discordPresence.smallImageKey = "ptb-small";
+        discordPresence.smallImageKey = "mcmichaellarge";
         discordPresence.partyId = "party1234";
         discordPresence.partySize = 1;
-        discordPresence.partyMax = 6;
+        discordPresence.partyMax = 1;
         discordPresence.partyPrivacy = DISCORD_PARTY_PUBLIC;
         discordPresence.matchSecret = "xyzzy";
         discordPresence.joinSecret = "join";
