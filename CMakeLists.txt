@@ -9,7 +9,7 @@ option(BUILD_EXAMPLES "Build example apps" ON)
 file(GLOB_RECURSE ALL_SOURCE_FILES
     examples/*.cpp examples/*.h examples/*.c
     include/*.h
-    src/*.cpp src/*.h src/*.c
+        library/*.cpp library/*.h library/*.c
 )
 
 # Set CLANG_FORMAT_SUFFIX if you are using custom clang-format, e.g. clang-format-5.0
@@ -50,7 +50,7 @@ add_library(rapidjson STATIC IMPORTED ${RAPIDJSON})
 
 # add subdirs
 
-add_subdirectory(src)
+add_subdirectory(library)
 if (BUILD_EXAMPLES)
     add_subdirectory(examples/send-presence)
 endif(BUILD_EXAMPLES)
