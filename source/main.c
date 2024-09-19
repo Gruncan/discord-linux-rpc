@@ -1,15 +1,8 @@
-/*
-    This is a simple example in C of using the rich presence API asynchronously.
-*/
-
-#define _CRT_SECURE_NO_WARNINGS /* thanks Microsoft */
-
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <limits.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <unistd.h>
@@ -20,8 +13,17 @@ static const char* APPLICATION_ID = "1286034210838155325";
 static int64_t StartTime;
 static int SendPresence = 1;
 
+static int detailsProgress = 0;
+static int detailsFlipper = 1;
 
-void signalHandler(int signal) {
+#define PROGRESS_BAR_WIDTH  20
+#define PROGRESS_CHAR       '-'
+#define PROGRESS_CHAR_START '<'
+#define PROGRESS_CHAR_END   '>'
+#define NON_PROGRESS_CHAR   '\32'
+#define PROGRESS_INCREMENT  3
+
+void signalHandler(const int signal) {
     if (signal == SIGINT || signal == SIGTERM) {
         printf("Closing connections...\n");
         Discord_Shutdown();
@@ -29,28 +31,35 @@ void signalHandler(int signal) {
     }
 }
 
-static int prompt(char* line, size_t size)
-{
-    int res;
-    char* nl;
-    printf("\n> ");
-    fflush(stdout);
-    res = fgets(line, size, stdin) ? 1 : 0;
-    line[size - 1] = 0;
-    nl = strchr(line, '\n');
-    if (nl) {
-        *nl = 0;
-    }
-    return res;
-}
 
 static void updateDiscordPresence()
 {
     if (SendPresence) {
         char buffer[256];
+        for(int i = 1; i <= PROGRESS_BAR_WIDTH; i++) {
+            if (i == detailsProgress) {
+                buffer[i] = PROGRESS_CHAR_START;
+            } else if(i == detailsProgress + 1) {
+                buffer[i] = PROGRESS_CHAR;
+            } else if (i == detailsProgress + 2) {
+                buffer[i] = PROGRESS_CHAR_END;
+            } else {
+                buffer[i] = NON_PROGRESS_CHAR;
+            }
+        }
+        buffer[0] = '[';
+        buffer[PROGRESS_BAR_WIDTH+1] = ']';
+        buffer[PROGRESS_BAR_WIDTH+2] = '\0';
+
+        if (detailsProgress == PROGRESS_BAR_WIDTH - 2) {
+            detailsFlipper -= 1;
+        }else if (detailsProgress == 2 && detailsFlipper != 1) {
+            detailsFlipper += 1;
+        }
+        detailsProgress += detailsFlipper;
+
         DiscordRichPresence discordPresence;
         memset(&discordPresence, 0, sizeof(discordPresence));
-        sprintf(buffer, "Jamezeboyy L count: 99");
         discordPresence.details = buffer;
         discordPresence.startTimestamp = StartTime;
         discordPresence.endTimestamp = time(0) + 5 * 60;
@@ -100,35 +109,7 @@ static void handleDiscordSpectate(const char* secret)
 
 static void handleDiscordJoinRequest(const DiscordUser* request)
 {
-    int response = -1;
-    char yn[4];
-    printf("\nDiscord: join request from %s#%s - %s\n",
-           request->username,
-           request->discriminator,
-           request->userId);
-    do {
-        printf("Accept? (y/n)");
-        if (!prompt(yn, sizeof(yn))) {
-            break;
-        }
-
-        if (!yn[0]) {
-            continue;
-        }
-
-        if (yn[0] == 'y') {
-            response = DISCORD_REPLY_YES;
-            break;
-        }
-
-        if (yn[0] == 'n') {
-            response = DISCORD_REPLY_NO;
-            break;
-        }
-    } while (1);
-    if (response != -1) {
-        Discord_Respond(request->userId, response);
-    }
+    printf("\nDiscord: join (%s)\n", request->username);
 }
 
 static void discordInit()
@@ -156,11 +137,8 @@ int main(void)
     updateDiscordPresence();
     printf("Presence updated.\n");
 
-    while(1)
-    {
-
+    while(1) {
+        updateDiscordPresence();
+        sleep(PROGRESS_INCREMENT);
     }
-
-    Discord_Shutdown();
-    return 0;
 }
